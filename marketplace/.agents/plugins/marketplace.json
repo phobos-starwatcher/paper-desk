@@ -1,0 +1,10 @@
+{
+  "name": "paper-desk-local",
+  "interface": { "displayName": "文献对读 · 本地插件" },
+  "plugins": [{
+    "name": "paper-desk",
+    "source": { "source": "local", "path": "./plugins/paper-desk" },
+    "policy": { "installation": "AVAILABLE", "authentication": "ON_USE" },
+    "category": "Productivity"
+  }]
+}
