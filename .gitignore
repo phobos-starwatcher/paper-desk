@@ -1,0 +1,8 @@
+.runtime/
+.paper-desk/
+.venv/
+__pycache__/
+*.pyc
+*.local.json
+.mcp.json
+test-output/
