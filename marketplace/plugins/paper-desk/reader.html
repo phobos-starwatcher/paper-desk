@@ -1,0 +1,1029 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>文献对读</title>
+<style>
+:root{color-scheme:light;--bg:#e8eee9;--ink:#192c28;--muted:#53655e;--paper:#fbfcfa;--soft:#eff5ef;--rule:#d1ddd4;--accent:#17654f;--strong:#104538;--on:#fff;--pulse:#f8d150aa;--picked:#65c9af88;font:14px/1.5 system-ui,"Microsoft YaHei",sans-serif}
+@media(prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#1b2420;--ink:#ebf4ec;--muted:#a7bcb0;--paper:#222e28;--soft:#293a31;--rule:#3e5449;--accent:#78d8b3;--strong:#125644;--on:#fff;--pulse:#ffcc51aa;--picked:#60d3a888}}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);height:100vh;overflow:hidden}
+[hidden]{display:none!important}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--rule);border-radius:7px;background:var(--paper);padding:5px 9px;white-space:nowrap}
+button:hover{border-color:var(--accent);background:var(--soft)}
+button:disabled{opacity:.48;cursor:default}
+button:focus-visible,textarea:focus-visible,input:focus-visible,select:focus-visible,.split:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--strong);border-color:var(--strong);color:var(--on)}
+button.icon{padding:1px 8px;font-size:17px}
+#app{height:100%;display:flex;flex-direction:column}
+.mast{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:9px 13px;border-bottom:1px solid var(--rule)}
+.brand{display:flex;gap:9px;align-items:center;white-space:nowrap;font-weight:700}
+.brand img{height:23px;width:23px;display:block}
+#title{color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:110px}
+.tools,.pager{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pager input{width:47px;text-align:center;border:1px solid var(--rule);background:var(--paper);border-radius:6px;padding:2px 3px}
+#notice{padding:0 14px;background:var(--soft);color:var(--muted);min-height:27px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--rule)}
+#notice[data-tone="error"]{color:#ad2d25}
+#translation-progress{display:grid;grid-template-columns:auto minmax(62px,1fr) auto;align-items:center;gap:10px;padding:6px 13px;background:var(--soft);color:var(--muted);border-bottom:1px solid var(--rule);font-size:12px}
+#translation-progress progress{width:100%;height:10px;accent-color:var(--accent)}
+.welcome{max-width:710px;margin:auto;padding:24px 40px 60px}
+.eyebrow{font-size:12px;letter-spacing:.12em;color:var(--accent);font-weight:700}
+.welcome h1{font-size:clamp(34px,6vw,62px);letter-spacing:-.06em;line-height:1.06;margin:10px 0 17px}
+.welcome p{color:var(--muted);max-width:400px;margin-bottom:20px}
+.welcome .hint{font-size:12px;margin-top:18px}
+.workspace{--a:39;--b:39;flex:1;min-height:0;display:grid}
+.workspace:not(.single){grid-template-columns:minmax(0,calc(var(--a)*1% - 5px)) 5px minmax(0,calc(var(--b)*1% - 5px)) 5px minmax(0,1fr)}
+.workspace.single{grid-template-columns:minmax(0,1fr)}
+.pane{min-height:0;min-width:0;display:flex;flex-direction:column;background:var(--paper)}
+.pane-head{display:flex;align-items:center;gap:4px;padding:6px 8px;border-bottom:1px solid var(--rule);min-height:37px}
+.pane-head strong{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pane-head small{color:var(--muted);display:none}
+@media(min-width:1150px){.pane-head small{display:inline}}
+.split{background:var(--rule);cursor:col-resize;touch-action:none}
+.split:hover,.split:focus{background:var(--accent)}
+.scroll{position:relative;flex:1;min-height:0;overflow:auto;overflow-anchor:none;background:var(--bg);padding:10px;overscroll-behavior:contain}
+.sheet{width:var(--sheet-width,100%);margin:0 auto 12px}
+.sheet-label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;text-align:center}
+.page.waiting{display:grid;place-items:center;color:#546b62;font-size:12px;cursor:default}
+.page{position:relative;background:white;box-shadow:0 1px 4px #152c2033;margin:0 auto 6px;touch-action:pan-y;cursor:text;user-select:none}
+.page img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:fill;pointer-events:none}
+.text-layer,.marker-layer{position:absolute;inset:0;overflow:hidden}
+.text-layer{cursor:text}
+.text-layer span,.marker-layer s{position:absolute;display:block;color:transparent;white-space:pre;overflow:hidden;text-decoration:none;line-height:1}
+.marker-layer{pointer-events:none;z-index:2}
+.marker-layer s{background:var(--pulse);border-radius:2px}
+.marker-layer s.picked{background:var(--picked)}
+.empty{padding:22px 17px;color:var(--muted);max-width:330px}
+.empty strong{display:block;color:var(--ink);font-size:16px;margin-bottom:5px}
+.empty button{margin-top:10px}
+#chat-log{flex:1;min-height:0;overflow:auto;padding:11px;display:flex;flex-direction:column;gap:8px}
+.model-control{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:5px 6px;padding:5px 8px;border-bottom:1px solid var(--rule);color:var(--muted);font-size:12px}
+.model-control label{white-space:nowrap}
+.model-control select{display:block;min-width:0;width:100%;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);padding:3px}
+.translation-model-control{display:grid;gap:6px;margin:9px 0 12px;color:var(--muted)}
+.translation-model-control select{width:100%;min-width:0;border:1px solid var(--rule);border-radius:6px;background:var(--paper);color:var(--ink);padding:6px}
+.bubble{border:1px solid var(--rule);padding:7px 9px;white-space:pre-wrap;overflow-wrap:anywhere;border-radius:8px;background:var(--soft)}
+.bubble.me{margin-left:8px;background:var(--paper)}
+.bubble small{color:var(--muted);display:block;margin-bottom:3px}
+.bubble .answer-context{margin:8px 0 0;border-top:1px solid var(--rule);padding-top:5px}
+.answer-activity{margin:0 8px 7px;padding:7px 9px;border-radius:7px;background:var(--soft);color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.answer-activity strong{color:var(--ink);display:block}
+.answer-activity[data-error="true"] strong{color:#a93126}
+.thinking-dot{display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:var(--accent);animation:thinking 1.6s ease-in-out infinite}
+@keyframes thinking{50%{opacity:.35}}
+@media(prefers-reduced-motion:reduce){.thinking-dot{animation:none}}
+.composer{border-top:1px solid var(--rule);padding:8px;display:flex;flex-direction:column;gap:6px}
+.composer textarea{min-height:48px;max-height:120px;resize:vertical;width:100%;background:var(--paper);border:1px solid var(--rule);border-radius:7px;padding:7px}
+.composer .tools{justify-content:flex-end}
+.composer .quote{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#foot{font-size:12px;color:var(--muted);min-height:27px;padding:4px 10px;border-top:1px solid var(--rule)}
+.badge{border-radius:100px;background:var(--soft);color:var(--accent);font-size:11px;padding:2px 6px}
+.dialog-content{background:var(--paper);color:var(--ink);border:1px solid var(--rule);border-radius:10px;max-width:min(520px,92vw);padding:20px}
+.dialog-content::backdrop{background:#0c231b88}
+.dialog-content p{color:var(--muted)}code{overflow-wrap:anywhere}
+.history-dialog{width:min(650px,94vw);max-width:94vw;max-height:85vh;padding:0}
+.history-header{display:grid;grid-template-columns:1fr auto;gap:8px;padding:15px 18px;border-bottom:1px solid var(--rule)}
+.history-header h2{margin:0;font-size:19px}
+#history-filter{grid-column:1/-1;width:100%;padding:7px 10px;border:1px solid var(--rule);border-radius:7px;background:var(--soft)}
+#history-list{padding:8px 18px 16px;max-height:60vh;overflow:auto}
+.history-paper{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:11px 0;border-bottom:1px solid var(--rule)}
+.history-paper>div{flex:1 1 240px;min-width:0}
+.history-paper strong{display:block;overflow-wrap:anywhere;line-height:1.45}
+.history-paper small{color:var(--muted)}
+#chat-log .older{align-self:center}
+@media(max-width:560px){.welcome{padding:20px}.mast{gap:6px;padding:6px}.pane-head{padding:4px}.composer{padding:4px}.pane-head button{padding:1px 4px}.scroll{padding:4px}.composer button{font-size:11px}}
+</style>
+</head>
+<body>
+<div id="app">
+<header class="mast">
+  <div class="brand"><img src="PAPER_DESK_ICON_SRC" alt="">文献对读</div>
+  <div id="title"></div>
+  <div id="tools" class="tools">
+    <button id="open">打开 PDF</button><button id="recent">最近阅读</button><button id="demo">演示</button>
+    <button id="settings" aria-label="查看翻译模型">使用 Codex</button>
+  </div>
+  <div id="pager" class="pager" hidden>
+    <button id="prev" class="icon" aria-label="上一页">‹</button>
+    <input id="page-number" type="number" min="1" value="1" aria-label="页码">
+    <span id="pages"></span>
+    <button id="next" class="icon" aria-label="下一页">›</button>
+  </div>
+</header>
+<div id="notice" hidden role="status" aria-live="polite"></div>
+<div id="translation-progress" hidden>
+  <span id="progress-stage">准备翻译</span><progress id="progress-bar" max="100" aria-label="全文翻译进度"></progress>
+  <span id="progress-number"></span>
+</div>
+<main id="welcome" class="welcome">
+  <div class="eyebrow">BILINGUAL READING DESK</div>
+  <h1>两种语言，<br>对照阅读。</h1>
+  <p>并排阅读论文、英文教材和技术文档的 PDF 原文与简体中文译文。选中一句话，另一侧会高亮对应语句，也可以带着选文向 Codex 提问。</p>
+  <button id="welcome-open" class="primary">选择 PDF</button>
+  <button id="welcome-recent">最近阅读</button>
+  <button id="welcome-demo">试读内置演示</button>
+  <div class="hint">已译好的 PDF 也可以一并导入。可选文字的 PDF 更适合句子对照。</div>
+</main>
+<main id="workspace" class="workspace" hidden>
+  <section class="pane" id="original">
+    <div class="pane-head"><strong>原文</strong><small>SOURCE</small><button class="icon zoom" data-side="original" data-delta="-1" aria-label="缩小原文">−</button><button class="icon zoom" data-side="original" data-delta="1" aria-label="放大原文">+</button><button class="icon pop" data-pane="original" aria-label="弹出原文">↗</button></div>
+    <div id="original-scroll" class="scroll"></div>
+  </section>
+  <div id="split-a" class="split" tabindex="0" role="separator" aria-orientation="vertical" aria-label="调整原文和译文宽度"></div>
+  <section class="pane" id="translation">
+    <div class="pane-head"><strong>简体译文</strong><button id="save-as" hidden>另存为</button><button id="export" hidden aria-label="打开译文 PDF">PDF</button><button class="icon zoom" data-side="translation" data-delta="-1" aria-label="缩小译文">−</button><button class="icon zoom" data-side="translation" data-delta="1" aria-label="放大译文">+</button><button class="icon pop" data-pane="translation" aria-label="弹出译文">↗</button></div>
+    <div id="translation-scroll" class="scroll"></div>
+  </section>
+  <div id="split-b" class="split" tabindex="0" role="separator" aria-orientation="vertical" aria-label="调整译文和问答宽度"></div>
+  <section class="pane" id="chat">
+    <div class="pane-head"><strong>文档问答</strong><button class="icon pop" data-pane="chat" aria-label="弹出问答">↗</button></div>
+    <div class="model-control">
+      <label for="chat-model">模型</label><select id="chat-model" aria-label="文档问答模型"><option value="">Codex 默认</option></select>
+      <label for="chat-effort">推理强度</label><select id="chat-effort" aria-label="文档问答推理强度" disabled><option value="">默认</option></select>
+    </div>
+    <div id="chat-log" aria-live="polite" tabindex="-1" aria-label="文档问答记录"></div>
+    <div id="answer-activity" class="answer-activity" role="status" aria-live="polite" hidden>
+      <strong><i class="thinking-dot" aria-hidden="true"></i><span id="answer-state"></span></strong>
+      <div id="answer-step"></div><div id="answer-evidence"></div>
+    </div>
+    <form id="ask" class="composer">
+      <div id="quote" class="quote">划选句子可加入上下文。</div>
+      <textarea id="question" aria-label="你的问题" placeholder="问概念、图表或用法…" maxlength="3500" required></textarea>
+      <div class="tools">
+        <button type="button" id="draft">在 Codex 中问</button><button class="primary" id="send">提问</button>
+      </div>
+    </form>
+  </section>
+</main>
+<footer id="foot" hidden><span id="foot-text"></span> <button id="copy" type="button" hidden>复制划选</button> <button id="clear" type="button" hidden>清除高亮</button></footer>
+</div>
+<input id="file" type="file" accept=".pdf,application/pdf" hidden>
+<input id="translated-file" type="file" accept=".pdf,application/pdf" hidden>
+<dialog id="history" class="dialog-content history-dialog" aria-labelledby="history-title">
+  <div class="history-header">
+    <h2 id="history-title">最近阅读</h2>
+    <form method="dialog"><button aria-label="关闭阅读记录">关闭</button></form>
+    <input id="history-filter" type="search" placeholder="按文档标题搜索…" aria-label="搜索阅读记录">
+  </div>
+  <div id="history-list" aria-live="polite"></div>
+</dialog>
+<dialog id="setup" class="dialog-content">
+  <h2>直接使用 Codex</h2>
+  <p>打开 PDF 后先显示原文。在译文栏选择模型并点击「开始翻译」，才会调用 Codex。右侧问答的模型可以单独选择。</p>
+  <p>想在当前 Codex 对话里继续讨论，可以点「在 Codex 中问」。也可以导入一份逐页对应的现成译文。</p>
+  <form method="dialog"><button class="primary">关闭</button></form>
+</dialog>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.hash.slice(1));
+const pop = params.get('pane'), popupKey = params.get('key');
+const external = Boolean(popupKey && ['original','translation','chat'].includes(pop));
+if (external) history.replaceState(null, '', location.pathname);
+const embedded = parent !== window;
+const actor = globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
+const sides = ['original','translation'];
+const mcpPending = new Map();
+let mcpId = 1, session, current = 0, version = 0, seq = 0;
+let selection = { side:'', ids:[], chars:[], page:-1 }, drag, shareTimer, resize, currentChat;
+let receiveTool, busy = false, attachmentPending = false;
+let pendingAnswer, activityKey='';
+let startingTranslation='';
+let lastStatusError = false, initialResult = false;
+let modelCatalog,loadingModels=false,choosingModel=false;
+let libraryRows=[],openingHistory=false,chatTotal=0,chatStart=0;
+const chatTurns=new Map();
+const widths = [39,39,22];
+const zooms = {original:1,translation:1};
+const sheets = { original:[], translation:[] }, pages = new Map(), expectedScroll = {};
+let frame=0, wanted=[], inFlight=0, painted=-1;
+const maxSelect = 12000;
+
+function sendRPC(method, params, timeout = 120000) {
+  return new Promise((resolve,reject) => {
+    const id = mcpId++;
+    const timer = setTimeout(() => { mcpPending.delete(id); reject(Error('连接阅读器超时，请重新打开。')); },timeout);
+    mcpPending.set(id,{resolve,reject,timer});
+    parent.postMessage({jsonrpc:'2.0',id,method,params},'*');
+  });
+}
+function notify(method, params = {}) { parent.postMessage({jsonrpc:'2.0',method,params},'*'); }
+window.addEventListener('message', e => {
+  if (!embedded || e.source !== parent || e.data?.jsonrpc !== '2.0') return;
+  const m = e.data;
+  if (m.method === 'ui/notifications/tool-result') {
+    initialResult = true;
+    if (m.params?.isError) return notice(m.params.content?.[0]?.text || '无法打开文档。', true);
+    const data = m.params?.structuredContent || m.params?._meta?.data;
+    if (data?.id) void showSession(data);
+    if (data?.hostFile) void openAttachment();
+  }
+  if (m.method === 'ui/notifications/tool-input' && m.params?.arguments?.file && !initialResult) {
+    receiveTool = m.params.arguments.file;
+    setTimeout(() => { if (!initialResult) void openAttachment(); },700);
+  }
+  const p = mcpPending.get(m.id);
+  if (!p) return;
+  mcpPending.delete(m.id); clearTimeout(p.timer);
+  if (m.error) p.reject(Error(m.error.message)); else p.resolve(m.result);
+});
+async function api(action,args = {}) {
+  if (external) {
+    const res = await fetch('/rpc',{method:'POST',headers:{
+      'Content-Type':'application/json',Authorization:'Bearer ' + (popupKey || '')
+    },body:JSON.stringify({action,args})});
+    const data = await res.json();
+    if (!res.ok) throw Error(data.error || '阅读器请求失败。');
+    return data;
+  }
+  const name=['status','page','draft','export','models','library','chatHistory'].includes(action)?'reader_read':'reader_action';
+  const result = await sendRPC('tools/call',{name,arguments:{action,args}});
+  if (result?.isError) throw Error(result.content?.[0]?.text || '阅读器请求失败。');
+  return result?._meta?.data ?? result?.structuredContent ?? JSON.parse(result?.content?.[0]?.text || '{}');
+}
+function notice(msg = '',error = false) {
+  const bar = $('notice'); bar.hidden = !msg; bar.textContent = msg; bar.dataset.tone = error ? 'error' : '';
+}
+function message(e) { notice(e?.message || String(e),true); }
+function clearMarkers() { selection = {side:'',ids:[],chars:[],page:-1}; drawn(); }
+function pageButtons() {
+  $('prev').disabled = !session || current <= 0; $('next').disabled = !session || current >= session.pages-1;
+  $('page-number').max = session?.pages ?? 1;
+  if (document.activeElement !== $('page-number')) $('page-number').value = current+1;
+  $('pages').textContent = '/' + (session?.pages ?? 1);
+}
+function rememberChat(chat,stop){
+  const start=stop-chat.length/2;
+  for(let i=0;i+1<chat.length;i+=2)chatTurns.set(start+i/2,chat.slice(i,i+2));
+}
+function chatList(chat=[],total=chat.length/2){
+  if(chat.length)rememberChat(chat,total);
+  chatTotal=Math.max(chatTotal,total);
+  renderChat();
+}
+function renderChat(keepPosition=false){
+  chatStart=chatTotal;
+  while(chatStart>0&&chatTurns.has(chatStart-1))chatStart--;
+  const chat=[];
+  for(let i=chatStart;i<chatTotal;i++)chat.push(...chatTurns.get(i));
+  const key = JSON.stringify([chatStart,chatTotal,chat]);
+  if (key === currentChat) return;
+  currentChat = key;
+  const log = $('chat-log');
+  const previous=log.scrollTop, previousHeight=log.scrollHeight;
+  log.replaceChildren();
+  if(chatStart>0&&chat.length){
+    const older=document.createElement('button');older.className='older';older.textContent='加载更早的问答';
+    older.onclick=async()=>{
+      const id=session.id,before=chatStart;older.disabled=true;
+      try{
+        const result=await api('chatHistory',{id,before});
+        if(session?.id!==id)return;
+        rememberChat(result.chat,before);
+        renderChat(true);
+        log.querySelector('.older')?.focus({preventScroll:true});
+      }catch(error){message(error);older.disabled=false;}
+    };
+    log.append(older);
+  }
+  if (!chat.length) {
+    const e = document.createElement('div'); e.className='empty';
+    e.textContent = chatTotal?'正在读取已保存的问答…':'可先划选一处原文或译文，再问术语是什么意思、图表怎么读，或某个功能怎么用。';
+    log.append(e);
+  }
+  for (const m of chat) {
+    const node = document.createElement('div'); node.className='bubble' + (m.role==='user'?' me':'');
+    const label=document.createElement('small');label.textContent=m.role==='user'?'你':[m.model||'Codex 默认',effortLabel(m.effort)].filter(Boolean).join(' · ');
+    node.append(label,document.createTextNode(m.content));
+    if(m.role==='assistant'&&m.evidence){
+      const details=document.createElement('small');
+      details.className='answer-context';
+      details.textContent=evidenceText(m.evidence);
+      if(details.textContent)node.append(details);
+    }
+    log.append(node);
+  }
+  log.scrollTop=keepPosition?previous+log.scrollHeight-previousHeight:log.scrollHeight;
+}
+const effortLabels={none:'不推理',minimal:'极低',low:'低',medium:'中',high:'高',xhigh:'超高',max:'最大',ultra:'极限'};
+function effortLabel(e){return Object.hasOwn(effortLabels,e)?effortLabels[e]:'';}
+function status(s) {
+  const old = session;
+  session = s;
+  finishAnswer(s);
+  $('title').textContent = s.title;
+  $('welcome').hidden = true; $('workspace').hidden = false; $('pager').hidden = false; $('foot').hidden = false;
+  $('export').hidden = external || !s.hasTranslation;
+  const translationDetails=[s.translationModelUsed,effortLabel(s.translationEffortUsed)].filter(Boolean).join(' · ');
+  $('export').title=translationDetails?'打开译文 PDF · '+translationDetails:'打开译文 PDF';
+  $('save-as').hidden = external || !s.hasTranslation;
+  chatControls();
+  $('send').title = '用 Codex 就当前文档提问';
+  $('draft').hidden = external;
+  if (s.feedback) notice(s.feedback, s.phase==='error');
+  else if (old?.phase === 'translating' && s.phase === 'ready') notice('翻译完成'+(translationDetails?'（'+translationDetails+'）':'')+'，可点击「另存为」选择保存位置。');
+  else if (old?.feedback) notice();
+  $('translation-progress').hidden=s.phase!=='translating';
+  if (s.phase==='translating') {
+    const p=s.progress || {}, bar=$('progress-bar');
+    if (Number.isFinite(p.percent)) bar.value=p.percent; else bar.removeAttribute('value');
+    $('progress-stage').textContent=p.stage || '正在准备翻译';
+    $('progress-number').textContent=[p.model,effortLabel(p.effort),Number.isFinite(p.percent)?p.percent+'%':'准备中',
+      p.parts>1?'第 '+p.part+'/'+p.parts+' 部分':'',p.completed?'已译 '+p.completed+' 批':''].filter(Boolean).join(' · ');
+  }
+  chatList(s.chat,s.chatCount);
+  if (!s.hasTranslation) blankTranslation();
+  pageButtons();
+}
+function chatControls(){
+  const el=$('chat-model'), effort=$('chat-effort'), model=session?.chatModel||'';
+  const choice=modelCatalog?.models.find(m=>m.id===(model||modelCatalog.defaultModel));
+  const options=(choice?.efforts||[]).filter(e=>effortLabel(e));
+  const saved=session?.chatEffort||'';
+  if(!choosingModel){
+    if(model&&!Array.from(el.options).some(o=>o.value===model))el.add(new Option(model,model));
+    el.value=model;
+    const fallback=effortLabel(model?choice?.effort:'low');
+    const entries=[['',fallback?'默认（'+fallback+'）':'默认'],...options.map(e=>[e,effortLabel(e)])];
+    if(saved&&!options.includes(saved))entries.push([saved,effortLabel(saved)+(modelCatalog?'（不再支持）':'')]);
+    if(entries.length!==effort.options.length||entries.some(([value,label],i)=>effort.options[i].value!==value||effort.options[i].text!==label)){
+      effort.replaceChildren(...entries.map(([value,label])=>new Option(label,value)));
+      if(modelCatalog&&saved&&!options.includes(saved))effort.options[entries.length-1].disabled=true;
+    }
+    effort.value=saved;
+  }
+  const active=busy||isAnswerActive(session?.answerActivity);
+  el.disabled=active||choosingModel||loadingModels;
+  effort.disabled=el.disabled||!(options.length||saved);
+  effort.title=options.length?'只影响当前文档的问答':'尚未取得此模型的可选推理强度';
+  $('send').disabled=active||choosingModel;
+  renderAnswerActivity();
+}
+function isAnswerActive(a){return ['reading','requesting','generating','saving'].includes(a?.stage);}
+function evidenceText(e){
+  if(!e)return '';
+  const pages=Array.isArray(e.pages)?e.pages.filter(Number.isInteger):[];
+  const selection=e.matched?'已带入 '+e.matched+' 组对照选文':e.hasSelection?'已带入划选内容':'';
+  return [pages.length?'提供给模型的原文页：'+pages.join('、'):'',selection].filter(Boolean).join(' · ');
+}
+function finishAnswer(s){
+  const a=s.answerActivity;
+  if(!pendingAnswer||pendingAnswer.paper!==s.id||pendingAnswer.id!==a?.id||isAnswerActive(a))return;
+  if(a.stage==='done'&&$('question').value.trim()===pendingAnswer.text)$('question').value='';
+  pendingAnswer=null;
+}
+function renderAnswerActivity(){
+  const activity=session?.answerActivity;
+  const a=busy&&!isAnswerActive(activity)?{stage:'reading',page:current+1}:activity;
+  const box=$('answer-activity'), failed=a?.stage==='error';
+  const visible=isAnswerActive(a)||failed;
+  const steps={
+    reading:'正在读取第 '+(a?.page||1)+' 页及相关段落',
+    requesting:'正在提交文档上下文',
+    generating:'正在生成回答',
+    saving:'正在保存问答记录'
+  };
+  const state=failed?'未完成回答':'思考中';
+  const step=failed?(a?.message||'可以重新提问。'):steps[a?.stage]||'';
+  const detail=evidenceText(a?.evidence);
+  const key=JSON.stringify([visible,state,step,detail,failed]);
+  if(key===activityKey)return;
+  activityKey=key;
+  box.hidden=!visible;
+  box.dataset.error=String(failed);
+  box.querySelector('.thinking-dot').hidden=failed;
+  $('answer-state').textContent=state;
+  $('answer-step').textContent=step;
+  $('answer-evidence').textContent=detail;
+}
+async function loadModels(){
+  if(loadingModels||modelCatalog||!session||(external&&pop!=='chat'))return;
+  const id=session.id, el=$('chat-model');
+  loadingModels=true;chatControls();
+  try{
+    modelCatalog=await api('models',{id});
+    fillModelOptions(el, session?.chatModel||'');
+    el.title='只影响此阅读会话的问答';
+  }catch(e){
+    el.title='暂时读不到 Codex 模型列表。可以用默认模型，或点击这里重试。';
+  }finally{loadingModels=false;chatControls();updateTranslationControls();}
+}
+function fillModelOptions(el, selected) {
+  const defaultModel=modelCatalog?.defaultModel;
+  el.replaceChildren(new Option(defaultModel?'Codex 默认 · '+defaultModel:'Codex 默认',''));
+  for(const item of modelCatalog?.models||[])el.add(new Option(item.label,item.id));
+  if(selected&&!Array.from(el.options).some(o=>o.value===selected))el.add(new Option(selected,selected));
+  el.value=selected;
+}
+function updateTranslationControls(resetEffort=false){
+  const picker=$('translation-model'), effort=$('translation-effort'), start=$('start-translation');
+  if(!picker||!effort||!start)return;
+  const saved=resetEffort?'':effort.value;
+  fillModelOptions(picker,picker.value);
+  const model=modelCatalog?.models.find(m=>m.id===(picker.value||modelCatalog.configuredModel));
+  const options=(model?.efforts||[]).filter(e=>effortLabel(e));
+  const fallback=effortLabel(model?.effort);
+  effort.replaceChildren(new Option(fallback?'默认（'+fallback+'）':'默认',''));
+  for(const option of options)effort.add(new Option(effortLabel(option),option));
+  if(saved&&(!modelCatalog||options.includes(saved))){
+    if(!modelCatalog)effort.add(new Option(effortLabel(saved),saved));
+    effort.value=saved;
+  }
+  effort.title=options.length?'本次翻译使用的推理强度':'尚未取得此模型的可选推理强度';
+  const sending=startingTranslation===session?.id;
+  picker.disabled=sending||loadingModels;
+  effort.disabled=sending||loadingModels||!options.length;
+  start.disabled=sending||loadingModels;
+  start.textContent=sending?'正在准备…':session.phase==='error'?'重新翻译':'开始翻译';
+}
+async function showSession(s) {
+  if (!s?.id) return;
+  const same = session?.id === s.id;
+  const revised=same&&session.revision!==s.revision;
+  if (!same) {
+    current = s.shared?.page || 0;
+    seq = s.shared?.seq || 0;
+    chatTurns.clear();chatTotal=0;currentChat=null;
+    clearMarkers();
+  }
+  status(s);
+  void loadModels();
+  if(revised)buildPages(true);
+  if (!same) {
+    buildPages();
+    if (s.shared?.ids?.length) { selection = {side:s.shared.side,ids:s.shared.ids,chars:[],page:current}; drawn(); }
+    if(s.chatCount&&!s.chat?.length){
+      void api('chatHistory',{id:s.id}).then(result=>{if(session?.id===s.id)chatList(result.chat,result.total);}).catch(message);
+    }
+  }
+}
+function drawLibrary(){
+  const list=$('history-list'), q=$('history-filter').value.trim().toLowerCase();
+  const rows=libraryRows.filter(row=>row.title.toLowerCase().includes(q));
+  list.replaceChildren();
+  if(!rows.length){
+    const help=document.createElement('p');help.textContent=q?'没有符合标题的文档。':'还没有阅读记录。打开 PDF 后，这里会自动出现。';
+    list.append(help);return;
+  }
+  for(const row of rows){
+    const entry=document.createElement('div');entry.className='history-paper';
+    const details=document.createElement('div'), title=document.createElement('strong'), info=document.createElement('small');
+    title.textContent=row.title;
+    const date=row.openedAt?new Intl.DateTimeFormat('zh-CN',{month:'numeric',day:'numeric'}).format(row.openedAt):'';
+    info.textContent=[date,'第 '+(row.page+1)+' / '+row.pages+' 页',row.hasTranslation?'有译文':'仅原文',row.questionCount+' 条问答'].filter(Boolean).join(' · ');
+    details.append(title,info);
+    const resume=document.createElement('button');resume.className='primary';resume.textContent='继续阅读';
+    const questions=document.createElement('button');questions.textContent='查看问答';questions.disabled=!row.questionCount;
+    resume.onclick=()=>openHistoryPaper(row.id,false);
+    questions.onclick=()=>openHistoryPaper(row.id,true);
+    entry.append(details,questions,resume);list.append(entry);
+  }
+}
+async function openHistoryPaper(id,focusChat){
+  if(openingHistory)return;
+  openingHistory=true;
+  const list=$('history-list');
+  for(const button of list.querySelectorAll('button'))button.disabled=true;
+  try{
+    const s=await api('reopen',{id});
+    $('history').close();
+    await showSession(s);
+    if(focusChat)$('chat-log').focus();
+  }catch(error){
+    drawLibrary();
+    const hint=document.createElement('p');hint.textContent=error.message;list.prepend(hint);
+  }finally{openingHistory=false;}
+}
+async function showLibrary(){
+  const filter=$('history-filter'),list=$('history-list');
+  filter.value='';
+  $('history').showModal();
+  list.textContent='正在读取本机阅读记录…';
+  try{libraryRows=(await api('library')).papers;drawLibrary();}
+  catch(error){list.textContent=error.message;}
+}
+async function openAttachment() {
+  if (attachmentPending || session) return;
+  attachmentPending = true;
+  try {
+    try { return await showSession(await api('hostFile')); }
+    catch (e) {
+      if (!receiveTool?.resourceUri) throw e;
+      const r = await sendRPC('resources/read',{uri:receiveTool.resourceUri},35000);
+      const base64 = r.contents?.find(c => typeof c.blob==='string')?.blob;
+      if (!base64) throw e;
+      const raw = Uint8Array.from(atob(base64), x=>x.charCodeAt(0));
+      await importFile(new File([raw],receiveTool.name || '文档.pdf',{type:'application/pdf'}));
+    }
+  } catch (e) { message(Error('无法直接读取附件。请在阅读器中点「打开 PDF」，或在 Codex 中提供本地 PDF 路径。')); }
+  finally { attachmentPending = false; }
+}
+function blankTranslation() {
+  const sc = $('translation-scroll');
+  if (sc.querySelector('.empty') && sc.dataset.phase===session.phase && sc.dataset.paper===session.id) return;
+  sc.dataset.phase=session.phase;
+  sc.dataset.paper=session.id;
+  sc.replaceChildren();
+  const box=document.createElement('div');box.className='empty';
+  const h=document.createElement('strong'); h.textContent=session.phase==='translating'?'正在翻译全文':'尚未翻译';
+  box.append(h,document.createTextNode(session.phase==='translating'?'原文已经可以阅读。翻译完成后两栏会自动对照。':
+    session.selectable?'先选模型，再点击开始。也可以直接导入已有中文 PDF。':'没有可用文字层。请先做 OCR，或导入一份页码对应的单语译文。'));
+  if (!external) {
+    const button=(title,fn)=>{const b=document.createElement('button');b.textContent=title;b.onclick=fn;box.append(b,document.createTextNode(' '));};
+    if (session.phase==='translating') button('取消翻译',()=>api('cancel',{id:session.id}).catch(message));
+    else {
+      if (session.selectable) {
+        const controls=document.createElement('div');controls.className='translation-model-control';
+        const label=document.createElement('label');label.htmlFor='translation-model';label.textContent='翻译模型';
+        const picker=document.createElement('select');picker.id='translation-model';
+        fillModelOptions(picker,session.translationModel||'');
+        picker.addEventListener('focus',()=>{if(!modelCatalog)void loadModels();});
+        picker.onchange=()=>updateTranslationControls(true);
+        const effortTitle=document.createElement('label');effortTitle.htmlFor='translation-effort';effortTitle.textContent='推理强度';
+        const effort=document.createElement('select');effort.id='translation-effort';
+        const saved=effortLabel(session.translationEffort)?session.translationEffort:'';
+        effort.add(new Option(effortLabel(saved)||'默认',saved));
+        const start=document.createElement('button');start.id='start-translation';start.className='primary';
+        start.onclick=async()=>{
+          const id=session.id;
+          if(startingTranslation===id)return;
+          const model=picker.value, reasoning=effort.disabled?'':effort.value;
+          startingTranslation=id;
+          updateTranslationControls();
+          try {
+            const result=await api('translate',{id,model,effort:reasoning});
+            if(session?.id===id)status(result);
+          }catch(error){message(error);}
+          finally{if(startingTranslation===id)startingTranslation='';updateTranslationControls();}
+        };
+        controls.append(label,picker,effortTitle,effort,start);box.append(controls);
+      }
+      button('导入译文',()=>$('translated-file').click());
+    }
+  }
+  sc.append(box);
+  updateTranslationControls();
+}
+function pos(elem, values) {
+  const [x,y,w,h]=values;
+  elem.style.left=(100*x)+'%'; elem.style.top=(100*y)+'%';
+  elem.style.width=(100*w)+'%'; elem.style.height=(100*h)+'%';
+}
+function scroller(side) { return $(side+'-scroll'); }
+function pageAt(side, y) {
+  const list=sheets[side];
+  if (!list.length) return 0;
+  let lo=0, hi=list.length-1;
+  while(lo<hi){
+    const mid=Math.ceil((lo+hi)/2);
+    if(list[mid].sheet.offsetTop<=y)lo=mid;else hi=mid-1;
+  }
+  return lo;
+}
+function scrollAnchor(side) {
+  const sc=scroller(side), y=sc.scrollTop+parseFloat(getComputedStyle(sc).paddingTop);
+  const index=pageAt(side,y), sheet=sheets[side][index]?.sheet;
+  return { index, fraction:sheet?Math.max(0,Math.min(1,(y-sheet.offsetTop)/Math.max(1,sheet.offsetHeight))):0 };
+}
+function setScroll(side,index,fraction=0) {
+  const sc=scroller(side), sheet=sheets[side][index]?.sheet;
+  if(!sheet)return;
+  const top=sheet.offsetTop-parseFloat(getComputedStyle(sc).paddingTop)+sheet.offsetHeight*fraction;
+  if(Math.abs(top-sc.scrollTop)<=1)return;
+  const before=sc.scrollTop;
+  sc.scrollTop=top;
+  if(sc.scrollTop!==before)expectedScroll[side]=sc.scrollTop;
+}
+function updateWidth(side) {
+  if(!sheets[side].length)return;
+  const anchor=scrollAnchor(side), sc=scroller(side);
+  const width=Math.max(50,sc.clientWidth-(innerWidth<=560?8:20));
+  sc.style.setProperty('--sheet-width',Math.round(width*zooms[side])+'px');
+  setScroll(side,anchor.index,anchor.fraction);
+  schedulePages();
+}
+function reserve(side,index,size) {
+  const sheet=document.createElement('div');sheet.className='sheet';
+  const label=document.createElement('span');label.className='sheet-label';label.textContent='第 '+(index+1)+' 页';
+  const wrapper=document.createElement('div');wrapper.className='page waiting';
+  wrapper.dataset.page=index;
+  wrapper.style.aspectRatio=(size?.[0]||560)+' / '+(size?.[1]||700);
+  wrapper.setAttribute('aria-label',(side==='original'?'原文':'译文')+'第 '+(index+1)+' 页，可用鼠标划选');
+  wrapper.textContent='正在加载页面…';
+  sheet.append(label,wrapper);
+  wrapper.addEventListener('pointerdown',e=>startDrag(e,side,index));
+  wrapper.addEventListener('pointermove',e=>moveDrag(e,side,index));
+  wrapper.addEventListener('pointerup',e=>finishDrag(e,side,index));
+  wrapper.addEventListener('pointercancel',e=>finishDrag(e,side,index));
+  wrapper.addEventListener('keydown',e=>{
+    if ((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='c'&&selection.chars.length) {e.preventDefault();void copySelection();}
+    if (e.key==='Escape') { clearMarkers(); push(); }
+  });
+  return {sheet,wrapper};
+}
+function buildPages(preserve=false) {
+  const anchor=preserve&&sheets.original.length?scrollAnchor('original'):
+    preserve&&sheets.translation.length?scrollAnchor('translation'):null;
+  ++version; pages.clear(); wanted=[]; painted=-1;
+  for(const side of sides) {
+    const sc=scroller(side);
+    const visible=!external||pop===side;
+    if(!visible || (side==='translation'&&!session.hasTranslation)){
+      sheets[side]=[];
+      if(visible)blankTranslation();
+      continue;
+    }
+    const sizes=side==='translation'?(session.translatedSizes||session.sizes):session.sizes;
+    const fragment=document.createDocumentFragment();
+    sheets[side]=Array.from({length:session.pages},(_,index)=>{
+      const slot=reserve(side,index,sizes?.[index]);
+      fragment.append(slot.sheet);
+      return slot;
+    });
+    sc.replaceChildren(fragment);
+    updateWidth(side);
+    if(anchor) setScroll(side,anchor.index,anchor.fraction);
+    else setScroll(side,current);
+  }
+  schedulePages();
+}
+function render(side,index,data,record) {
+  const slot=sheets[side][index];
+  if (!data || !slot) return;
+  const sc=scroller(side), wrapper=slot.wrapper;
+  wrapper.classList.remove('waiting');wrapper.tabIndex=0;
+  const img=document.createElement('img');img.src=data.image;img.alt='';img.draggable=false;
+  const layer=document.createElement('div');layer.className='text-layer';
+  const marks=document.createElement('div');marks.className='marker-layer';
+  const frag=document.createDocumentFragment(), flat=[], lines=[];
+  for (const row of data.rows) {
+    const indexes=[];
+    for (const item of row) {
+      const [glyph,x,y,w,h,id]=item;
+      const span=document.createElement('span');pos(span,[x,y,w,h]);span.textContent=glyph;
+      const idx=flat.length;span.dataset.i=idx;flat.push({glyph,x,y,w,h,id});indexes.push(idx);frag.append(span);
+    }
+    lines.push(indexes);
+  }
+  layer.append(frag);wrapper.replaceChildren(img,layer,marks);
+  record[side]={sc,layer,marks,flat,lines};
+}
+function emptyPage(index,text='正在加载页面…') {
+  for(const side of sides) {
+    const wrapper=sheets[side][index]?.wrapper;
+    if(!wrapper)continue;
+    wrapper.classList.add('waiting');wrapper.removeAttribute('tabindex');wrapper.textContent=text;
+  }
+}
+function schedulePages() {
+  if(frame)return;
+  frame=requestAnimationFrame(()=>{
+    frame=0;
+    if(!session||!sides.some(side=>sheets[side].length))return;
+    const needed=new Set([current,selection.page,drag?.page].filter(i=>Number.isInteger(i)&&i>=0));
+    for(const side of sides) {
+      if(!sheets[side].length)continue;
+      const sc=scroller(side);
+      const first=pageAt(side,sc.scrollTop),last=pageAt(side,sc.scrollTop+sc.clientHeight);
+      for(let i=Math.max(0,first-1);i<=Math.min(session.pages-1,last+1);i++)needed.add(i);
+    }
+    wanted=[...needed].sort((a,b)=>Math.abs(a-current)-Math.abs(b-current));
+    for(const i of pages.keys())if(!needed.has(i)){pages.delete(i);emptyPage(i);}
+    pumpPages();
+  });
+}
+function pumpPages() {
+  while(inFlight<2){
+    const index=wanted.find(i=>!pages.has(i));
+    if(index===undefined)return;
+    const epoch=version, record={};
+    pages.set(index,record);inFlight++;
+    api('page',{id:session.id,page:index}).then(value=>{
+      if(version!==epoch||pages.get(index)!==record)return;
+      record.pairs=value.pairs;
+      record.kinds=value.pairKinds||{};
+      for(const side of sides)render(side,index,value[side],record);
+      if(selection.page===index)drawn();
+    }).catch(e=>{
+      if(version!==epoch||pages.get(index)!==record)return;
+      emptyPage(index,'页面加载失败');
+      message(e);
+    }).finally(()=>{inFlight--;pumpPages();});
+  }
+}
+function nearest(e,info,tolerance) {
+  const elem = document.elementFromPoint(e.clientX,e.clientY);
+  const direct = elem?.dataset.i;
+  if (direct !== undefined && elem?.parentElement===info.layer) return Number(direct);
+  const r=info.layer.getBoundingClientRect();
+  const x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
+  let best=Infinity, found=-1;
+  for (const row of info.lines) for (const idx of row) {
+    const g=info.flat[idx];
+    const dy=Math.max(0,g.y-y,y-g.y-g.h)*r.height;
+    const dx=Math.max(0,g.x-x,x-g.x-g.w)*r.width;
+    const dist=dy*dy*2+dx*dx;
+    if (dist<best) {best=dist;found=idx;}
+  }
+  return best > tolerance*tolerance ? -1 : found;
+}
+function startDrag(e,side,index) {
+  const info=pages.get(index)?.[side];
+  if (e.pointerType!=='mouse' || e.button!==0 || !info || drag) return;
+  const at=nearest(e,info,12);
+  if (at<0) { clearMarkers();push();return; }
+  e.preventDefault(); e.currentTarget.focus({preventScroll:true});
+  e.currentTarget.setPointerCapture(e.pointerId);
+  current=index;pageButtons();
+  drag={start:at,end:at,side,page:index,x:e.clientX,y:e.clientY,pointer:e.pointerId,changed:false};
+}
+function moveDrag(e,side,index) {
+  const info=pages.get(index)?.[side];
+  if (!drag || drag.pointer!==e.pointerId || drag.side!==side || drag.page!==index || !info) return;
+  if (!drag.changed && Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<3) return;
+  const area = info.sc.getBoundingClientRect();
+  if (e.clientY >= area.bottom-20) info.sc.scrollTop+=14;
+  else if (e.clientY <= area.top+20) info.sc.scrollTop-=14;
+  const at=nearest(e,info,Infinity);
+  if ((at===drag.end && drag.changed) || at<0) return;
+  drag.changed=true;drag.end=at;
+  const start=Math.min(at,drag.start), stop=Math.min(Math.max(at,drag.start)+1,start+maxSelect);
+  const chars=Array.from({length:stop-start},(_,i)=>i+start);
+  const ids=[...new Set(info.flat.slice(start,stop).map(g=>g.id).filter(Boolean))];
+  selection={side,ids,chars,page:index};
+  drawn(false);
+}
+function finishDrag(e,side,index) {
+  if (!drag || drag.side!==side || drag.page!==index || drag.pointer!==e.pointerId) return;
+  if (e.type==='pointerup') moveDrag(e,side,index);
+  if (!drag.changed) clearMarkers();
+  else drawn(true);
+  drag=null;
+  push();
+}
+function marksFor(info,match,isPicked, reveal) {
+  const frag=document.createDocumentFragment();
+  let first;
+  for (const row of info.lines) {
+    let run = null;
+    const add=()=>{if(!run)return; const e=document.createElement('s');
+      if (isPicked) e.className='picked';pos(e,[run.x,run.y,run.r-run.x,run.b-run.y]);frag.append(e);first ||= e;run=null;};
+    for (const i of row) {
+      const g=info.flat[i];
+      if (!match(g,i)) { add();continue; }
+      if (run && g.x-run.r>.012) add();
+      if (!run) run={x:g.x,y:g.y,r:g.x+g.w,b:g.y+g.h};
+      else {run.r=Math.max(run.r,g.x+g.w);run.y=Math.min(run.y,g.y);run.b=Math.max(run.b,g.y+g.h);}
+    }
+    add();
+  }
+  info.marks.replaceChildren(frag);
+  if (first && reveal) {
+    const a=first.getBoundingClientRect(),p=info.sc.getBoundingClientRect();
+    if (a.top<p.top+10 || a.bottom>p.bottom-10) {
+      const before=info.sc.scrollTop;
+      info.sc.scrollTop += a.top-p.top-(p.height/3);
+      if(info.sc.scrollTop!==before)expectedScroll[sides.find(side=>scroller(side)===info.sc)]=info.sc.scrollTop;
+      schedulePages();
+    }
+  }
+}
+function drawn(reveal=false) {
+  const ids=new Set(selection.ids), chars=new Set(selection.chars);
+  if(painted!==selection.page)for(const side of sides)pages.get(painted)?.[side]?.marks.replaceChildren();
+  painted=selection.page;
+  const record=pages.get(selection.page);
+  for (const side of sides) {
+    const info=record?.[side];
+    if (!info) continue;
+    const picked=side===selection.side&&chars.size>0;
+    marksFor(info,(g,i)=>picked?chars.has(i):ids.has(g.id),picked,reveal&&!picked);
+  }
+  const pairs=selection.ids.map(id=>record?.pairs?.[id]).filter(Boolean);
+  const passages=selection.ids.filter(id=>record?.kinds?.[id]==='passage').length;
+  const countLabel=passages?pairs.length+' 组对应文字（含 '+passages+' 组语段）':pairs.length+' 组句子';
+  const unpaired=chars.size&&!ids.size;
+  $('quote').textContent=pairs.length?'已带入 '+countLabel+' · '+pairs[0][1]:unpaired?'所选文字没有可靠的双语对应位置。':'划选句子可加入上下文。';
+  $('clear').hidden=!chars.size&&!ids.size;
+  $('copy').hidden=!chars.size&&!ids.size;
+  $('foot-text').textContent=pairs.length?'已联动高亮 '+countLabel:unpaired?'未找到对应文字；仅保留当前侧的划选。':
+    session?.hasTranslation?'连续滚动阅读 · 鼠标划选联动高亮':'连续滚动阅读原文；生成译文后启用双向高亮。';
+}
+function push() {
+  if (!session) return;
+  clearTimeout(shareTimer);
+  const id=session.id, page=current, ids=[...selection.ids], side=selection.side;
+  shareTimer=setTimeout(()=>api('share',{id,page,ids,side,actor}).then(s=>{seq=Math.max(s.seq,seq);}).catch(()=>{}),80);
+}
+function go(p, share=true) {
+  if (!session || !Number.isInteger(p)) return;
+  const n=Math.min(Math.max(p,0),session.pages-1);
+  $('page-number').value=n+1;
+  const changed=n!==current;
+  if(changed){current=n;clearMarkers();}
+  for(const side of sides)setScroll(side,n);
+  pageButtons();schedulePages();
+  if(share&&changed)push();
+}
+async function poll() {
+  if (!session && !external) return;
+  if (document.hidden && !external) return;
+  try {
+    const s=await api('status',{id:session?.id});
+    if (session && s.id!==session.id) return;
+    if (!session) { await showSession(s); return; }
+    if (lastStatusError) {notice();lastStatusError=false;}
+    const reload=s.revision!==session.revision;
+    status(s);
+    if(reload)buildPages(true);
+    const remote=s.shared;
+    if (remote?.seq>seq && remote.actor!==actor && !drag) {
+      seq=remote.seq;
+      if (remote.page!==current) go(remote.page,false);
+      selection={side:remote.side,ids:remote.ids,chars:[],page:remote.page};
+      drawn(true);
+    } else if(reload) drawn();
+  } catch(e) { if (!lastStatusError) { message(e); lastStatusError=true; } }
+}
+function selectedText() {
+  const record=pages.get(selection.page), info=record?.[selection.side];
+  if (selection.chars.length&&info) {
+    const chosen = new Set(selection.chars);
+    return info.lines.map(row=>row.filter(i=>chosen.has(i)).map(i=>info.flat[i].glyph).join('')).filter(Boolean).join('\n').trim();
+  }
+  return selection.ids.map(id=>record?.pairs?.[id]?.[selection.side==='translation'?1:0]).filter(Boolean).join('\n');
+}
+async function copySelection() {
+  const text=selectedText();
+  if (!text) return;
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const field=document.createElement('textarea');field.value=text;field.setAttribute('readonly','');
+    Object.assign(field.style,{position:'fixed',left:'-5000px'});document.body.append(field);field.select();
+    if (!document.execCommand('copy')) notice('当前宿主未开放剪贴板。',true);
+    field.remove();
+  }
+}
+function resizeGrid() {
+  const work=$('workspace');
+  work.style.setProperty('--a',widths[0]);work.style.setProperty('--b',widths[1]);
+  for(const side of sides) updateWidth(side);
+}
+function changeWidth(i,delta) {
+  const left=widths[i],right=widths[i+1];
+  const d=Math.max(14-left,Math.min(delta,right-14));
+  widths[i]+=d;widths[i+1]-=d;resizeGrid();
+}
+for(const [i,id] of ['split-a','split-b'].entries()){
+  const el=$(id);
+  el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);resize={i,x:e.clientX};});
+  el.addEventListener('pointermove',e=>{if(resize?.i===i){const d=e.clientX-resize.x;resize.x=e.clientX;changeWidth(i,100*d/$('workspace').clientWidth);}});
+  for(const kind of ['pointerup','pointercancel']) el.addEventListener(kind,()=>{resize=null;});
+  el.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();changeWidth(i,e.key==='ArrowLeft'?-3:3);}});
+}
+for (const side of sides) $(side+'-scroll').addEventListener('scroll',e=>{
+  schedulePages();
+  if(!session||!sheets[side].length)return;
+  const self=e.currentTarget, expected=expectedScroll[side];
+  delete expectedScroll[side];
+  if(expected!==undefined&&Math.abs(expected-self.scrollTop)<=1)return;
+  const anchor=scrollAnchor(side), other=side==='original'?'translation':'original';
+  if(!external)setScroll(other,anchor.index,anchor.fraction);
+  if(drag)return;
+  const bottom=self.scrollHeight-self.clientHeight;
+  const index=bottom>0&&self.scrollTop>=bottom-2?session.pages-1:
+    pageAt(side,self.scrollTop+Math.min(92,self.clientHeight*.18));
+  if(index===current)return;
+  current=index;clearMarkers();pageButtons();push();
+},{passive:true});
+addEventListener('resize',resizeGrid);
+for (const b of document.querySelectorAll('.zoom')) b.addEventListener('click',()=>{
+  const s=b.dataset.side;zooms[s]=Math.min(3.2,Math.max(1,zooms[s]+Number(b.dataset.delta)*.35));updateWidth(s);
+});
+for (const b of document.querySelectorAll('.pop')) b.addEventListener('click',async()=>{
+  try {
+    const r=await api('popup',{id:session.id,pane:b.dataset.pane});
+    if (!r.opened) await sendRPC('ui/open-link',{url:r.url});
+    notice('独立窗口可拖到副屏，页码和高亮会跟随。');
+  } catch(e){message(e);}
+});
+function encode(bytes) {
+  let s='';for(let i=0;i<bytes.length;i+=8192)s+=String.fromCharCode(...bytes.subarray(i,i+8192));
+  return btoa(s);
+}
+async function importFile(file,id) {
+  if(!file)return;
+  let uploadId;
+  try {
+    notice('正在导入 PDF…');
+    ({uploadId}=await api('upload',{step:'begin',size:file.size,title:file.name}));
+    let offset=0;
+    while(offset<file.size) {
+      const bytes=new Uint8Array(await file.slice(offset,offset+245760).arrayBuffer());
+      ({offset}=await api('upload',{step:'append',uploadId,offset,data:encode(bytes)}));
+      notice('正在导入 PDF · '+Math.round(offset*100/file.size)+'%');
+    }
+    const s=await api('upload',{step:'finish',uploadId,id});
+    uploadId=null;notice();
+    if (id) {status(s);buildPages(true);}
+    else await showSession(s);
+  } catch(e) {
+    if (uploadId) void api('upload',{step:'cancel',uploadId}).catch(()=>{});
+    message(e);
+  }
+}
+function pick(){ $('file').click(); }
+async function example(){try{notice('正在打开演示…');const s=await api('demo');notice();await showSession(s);}catch(e){message(e);}}
+$('open').onclick=$('welcome-open').onclick=pick;
+$('recent').onclick=$('welcome-recent').onclick=showLibrary;
+$('history-filter').oninput=drawLibrary;
+$('demo').onclick=$('welcome-demo').onclick=example;
+$('settings').onclick=()=>$('setup').showModal();
+$('file').onchange=e=>{void importFile(e.target.files[0]);e.target.value='';};
+$('translated-file').onchange=e=>{void importFile(e.target.files[0],session.id);e.target.value='';};
+$('prev').onclick=()=>go(current-1);$('next').onclick=()=>go(current+1);
+$('page-number').onchange=e=>go(parseInt(e.target.value,10)-1);
+$('page-number').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();e.target.blur();}};
+$('clear').onclick=()=>{clearMarkers();push();};$('copy').onclick=copySelection;
+$('export').onclick=async()=>{try{
+  const r=await api('export',{id:session.id});await sendRPC('openai/files/open',{path:r.path});
+}catch(e){message(e);}};
+$('save-as').onclick=async()=>{
+  const button=$('save-as');
+  button.disabled=true;
+  try{
+    const r=await api('saveAs',{id:session.id});
+    if(r.path)notice('已保存译文：'+r.path);
+  }catch(e){message(e);}finally{button.disabled=false;}
+};
+$('chat-model').addEventListener('focus',()=>{if(!modelCatalog)void loadModels();});
+async function saveChatChoice(model,effort){
+  if(!session||choosingModel)return;
+  const id=session.id;
+  choosingModel=true;chatControls();
+  try{
+    const result=await api('setChatModel',{id,model,effort});
+    if(session?.id===id){
+      session.chatModel=result.chatModel;
+      session.chatEffort=result.chatEffort||'';
+    }
+  }catch(error){message(error);}
+  finally{choosingModel=false;chatControls();}
+}
+$('chat-model').onchange=e=>saveChatChoice(e.target.value,'');
+$('chat-effort').onchange=e=>saveChatChoice($('chat-model').value,e.target.value);
+$('ask').onsubmit=async e=>{
+  e.preventDefault();if(!session||busy||choosingModel||isAnswerActive(session.answerActivity))return;
+  const question=$('question').value.trim();if(!question)return;
+  const id=session.id;
+  busy=true;chatControls();
+  try {
+    const r=await api('ask',{id,page:current,question,ids:selection.ids,selectedText:selectedText().slice(0,3500),background:true});
+    if(session?.id===id){
+      if(r?.activity?.id){
+        pendingAnswer={paper:id,id:r.activity.id,text:question};
+        if(session.answerActivity?.id!==r.activity.id)session.answerActivity=r.activity;
+        finishAnswer(session);
+      } else if(Array.isArray(r?.chat)){
+        // An already-open pane can briefly talk to the previous server after an upgrade.
+        if($('question').value.trim()===question)$('question').value='';
+        chatList(r.chat,r.total);
+      } else {
+        throw Error('未收到问答状态，请重新打开阅读器后重试。');
+      }
+    }
+  }catch(e){message(e);}finally{busy=false;chatControls();}
+};
+$('draft').onclick=async()=>{
+  const question=$('question').value.trim();if(!question){$('question').focus();return;}
+  try {
+    const r=await api('draft',{id:session.id,page:current,question,ids:selection.ids,selectedText:selectedText().slice(0,3500)});
+    await sendRPC('ui/message',{role:'user',content:[{type:'text',text:r.draft}],_meta:{'openai/message':{target:'active',send:false}}});
+    notice('问题和文档片段已放入 Codex 输入框，请在那里发送。');
+  } catch(e) {message(e);}
+};
+document.addEventListener('dragover',e=>{if(!external&&Array.from(e.dataTransfer.types).includes('Files'))e.preventDefault();});
+document.addEventListener('drop',e=>{if(!external&&e.dataTransfer.files.length){e.preventDefault();void importFile(e.dataTransfer.files[0]);}});
+(async()=>{
+  if (external) {
+    $('tools').hidden=true;$('draft').hidden=true;
+    $('workspace').classList.add('single');
+    for(const id of ['original','translation','chat','split-a','split-b'])if(id!==pop)$(id).hidden=true;
+    for (const b of document.querySelectorAll('.pop')) b.hidden=true;
+    await poll();
+  } else if (embedded) {
+    try {
+      await sendRPC('ui/initialize',{protocolVersion:'2026-01-26',appInfo:{name:'paper-desk',version:'0.5.9'},appCapabilities:{}},12000);
+      notify('ui/notifications/initialized');
+    } catch(e) { message(e); }
+  } else { notice('请从 Codex 插件入口打开这个阅读器。');return; }
+  let polling=false;
+  setInterval(async()=>{if(polling)return;polling=true;try{await poll();}finally{polling=false;}},1250);
+})();
+})();
+</script>
+</body>
+</html>
