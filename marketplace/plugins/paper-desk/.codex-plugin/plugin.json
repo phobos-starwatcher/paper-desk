@@ -1,0 +1,17 @@
+{
+  "name": "paper-desk",
+  "version": "0.5.9",
+  "description": "在 Codex 内对照阅读论文、英文教材和技术文档的 PDF 原文与简体中文译文，并基于原文提问。",
+  "requires_local_executor": true,
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "文献对读",
+    "shortDescription": "原文、简体译文、问答同屏，划选双向高亮",
+    "category": "Productivity",
+    "capabilities": ["Interactive"],
+    "brandColor": "#17654F",
+    "logo": "./assets/paper-desk.png",
+    "composerIcon": "./assets/paper-desk.png"
+  }
+}
